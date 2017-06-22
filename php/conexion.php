@@ -1,5 +1,5 @@
 <?php
-
+	header("Content-Type: text/html;charset=utf-8");
 	class Connection{
 		private $dbhost="localhost";
 		private $dbuser="postgres";
@@ -47,6 +47,10 @@
 		
 		public function lastInsertId($id){
 			return $this->conexion->lastInsertId($id);
+		}
+		
+		public function getError(){
+			return $this->error;
 		}
 	}
 	

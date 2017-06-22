@@ -2,9 +2,10 @@
 require("conexion.php");	
 
 $db = new Connection();
+echo $db->getError();
 
 $rut = $_POST['rut'];
-$datos = Array(rut=>$rut);
+$datos = Array('rut'=>$rut);
 //$query = $db->prepare('SELECT * FROM usuario WHERE rut =:rut AND pass=:pass');
 
 $query = $db->prepare('SELECT * FROM ficha WHERE rut =:rut');
@@ -24,6 +25,6 @@ if ($cant_filas == 1) {
 	$respuesta = Array(estado=>'2'); // NO SE ENCONTRO EL PACIENTE
 }
 
-echo json_encode($respuesta);
+echo json_encode($respuesta,JSON_UNESCAPED_UNICODE);
 
 ?>
