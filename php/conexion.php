@@ -52,6 +52,20 @@
 		public function getError(){
 			return $this->error;
 		}
+		public function IsSessionID($session_id){
+			$datos = Array('session_id' => $session_id);
+			$query = $db->prepare('SELECT * FROM usuario WHERE session_id =:session_id');
+			foreach ($datos as $campo => $valor) {
+				$query->bindValue(":".$campo,$valor);
+			}
+			$query->execute();
+			$cant_filas = $query->rowCount();
+			if($cant_filas > 0){
+				return true;
+			}else{
+				return false;
+			}
+		}
 	}
 	
 	

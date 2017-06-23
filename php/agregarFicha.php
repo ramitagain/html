@@ -1,11 +1,12 @@
 <?php
 require("conexion.php");	
 
+
+if (isset($_POST['session_id']) && isset($_POST['rut']) && isset($_POST['nombres']) && isset($_POST['ap_paterno']) && isset($_POST['ap_materno']) && isset($_POST['patologia_ficha']) && isset($_POST['patologia']) && isset($_POST['id_usuario'])) {
+
 $db = new Connection();
-
+//$db->isSessionId($_POST['session_id']);
 $rut = $_POST['rut'];
-if (isset($_POST['rut'])) {
-
 $nombres = $_POST['nombres'];
 $ap_paterno = $_POST['ap_paterno'];
 $ap_materno = $_POST['ap_materno'];
