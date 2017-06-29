@@ -3,10 +3,10 @@ require("conexion.php");
 
 $db = new Connection();
 
-if(isset($_POST['usuario']) && isset($_POST['pass'])){
+if(!isset($_POST['usuario']) && !isset($_POST['pass'])){ //SACAR ! DEL IF
 	//RECIBO LOS DATOS
-	$rut = $_POST['usuario'];
-	$pass = $_POST['pass'];
+	$rut = '18868506-4';//$_POST['usuario'];
+	$pass = 'pokemon';//$_POST['pass'];
 	//SE ENCRIPTA LA CONTRASEÑA
 	$pass = hash ("sha256", $pass);
 	$datos = Array('rut'=>$rut, 'pass'=>$pass);
@@ -27,7 +27,7 @@ if(isset($_POST['usuario']) && isset($_POST['pass'])){
 			$session_id = session_id();
 			$respuesta = Array('estado'=>'1', 'session_id' => $session_id, 'datos_usuario'=>$result); // USUARIO ENCONTRADO CORRECTAMENTE
 			// UPDATE SESSION ID
-			$id_usuario = $respuesta['datos_paciente']['id_usuario'];
+			$id_usuario = $respuesta['datos_usuario']['id_usuario'];
 			$datos = Array('session_id' => $session_id, 'id_usuario' => $id_usuario);
 			$query = $db->prepare('UPDATE usuario SET session_id = :session_id WHERE id_usuario = :id_usuario;');
 			$db->beginTransaction();

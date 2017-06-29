@@ -1,11 +1,10 @@
 <?php
 require("conexion.php");	
-header("Content-Type: text/html;charset=utf-8");
 
-if(isset($_POST['id_area']) && isset($_POST['session_id'])){
+if(!isset($_POST['id_area']) && !isset($_POST['session_id'])){ // DESCOMENTAR ! PARA DEJAR VERSION FINAL
     //RECIBE LOS DATOS 
-    $id_area = $_POST['id_area'];
-    $session_id = $_POST['session_id'];
+    $id_area = 2;//$_POST['id_area'];
+    $session_id = 1;//$_POST['session_id'];
     // CREA LA CONEXION Y PREGUNTA SI LA SESSION ESTA INICIADA
     $db = new Connection();
     //$db->isSessionId();
