@@ -1,10 +1,16 @@
 <?php
 	header("Content-Type: text/html;charset=utf-8");
 	class Connection{
-		private $dbhost="localhost";
-		private $dbuser="postgres";
+		/*
+		private $dbhost="127.0.0.1";
+		private $dbuser="herida_user";
 		private $dbpass="pokemon";
 		private $dbname="testing";
+		*/
+		private $dbhost="127.0.0.1";
+		private $dbuser="herida_user";
+		private $dbpass="herida_pass";
+		private $dbname="herida_db";
 		private $error;
 		private $conexion;
 		
