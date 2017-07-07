@@ -59,15 +59,17 @@ Class Paciente{
 if(isset($_GET['func'])){
 	switch ($_GET['func']) {
 		case 'buscar':
-			if(isset($_GET['id_usuario']) && isset($_GET['rut']) && isset($_GET['session_id'])){
-                $resp = Usuario::verificarSession(htmlspecialchars($_GET['id_usuario']), htmlspecialchars($_GET['session_id']));
+			//if(isset($_GET['id_usuario']) && isset($_GET['rut']) && isset($_GET['session_id'])){
+            if(isset($_GET['rut'])){
+                //$resp = Usuario::verificarSession(htmlspecialchars($_GET['id_usuario']), htmlspecialchars($_GET['session_id']));
+                $resp = true;
                 if($resp){
                     echo Paciente::buscar(htmlspecialchars($_GET['rut']));
                 }
 			}
 			break;
         case 'agregar':
-			if(isset($_GET['id_usuario']) 
+			/*if(isset($_GET['id_usuario']) 
             && isset($_GET['rut']) 
             && isset($_GET['nombres'])
             && isset($_GET['ap_paterno'])
@@ -75,8 +77,16 @@ if(isset($_GET['func'])){
             && isset($_GET['fecha_nacimiento'])
             && isset($_GET['patologia'])
             && isset($_GET['id_usuario'])
-            && isset($_GET['session_id'])){
-                $resp = Usuario::verificarSession(htmlspecialchars($_GET['id_usuario']), htmlspecialchars($_GET['session_id']));
+            && isset($_GET['session_id'])){*/
+            if(isset($_GET['id_usuario']) 
+            && isset($_GET['rut']) 
+            && isset($_GET['nombres'])
+            && isset($_GET['ap_paterno'])
+            && isset($_GET['ap_materno'])
+            && isset($_GET['fecha_nacimiento'])
+            && isset($_GET['patologia'])){
+                //$resp = Usuario::verificarSession(htmlspecialchars($_GET['id_usuario']), htmlspecialchars($_GET['session_id']));
+                $resp = true;
                 if($resp){
                     echo Paciente::agregar(htmlspecialchars($_GET['rut']),
                     htmlspecialchars($_GET['nombres']),
@@ -86,7 +96,9 @@ if(isset($_GET['func'])){
                     htmlspecialchars($_GET['patologia']),
                     htmlspecialchars($_GET['id_usuario']));
                 }
-			}
+			}else{
+                echo "Error al recibir las variables";
+            }
 			break;
 		default:
 			# code...
