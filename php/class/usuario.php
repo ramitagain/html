@@ -6,25 +6,49 @@ Class Usuario{
 		try {
 			$connection = Conexion::getConnect();
 			$passwd = self::codificado($pass);
-			//falta poner la query como antes, la cambié para pruebas. y algo mas le falta, lo terminan ustedes.
 			$sql= 'SELECT id_usuario, id_tipo, id_area, rut, nombre, ap_paterno, ap_materno, estado FROM usuario WHERE rut =:rut AND pass =:passwd';
-			$connection->beginTransaction();
 			$resultado = $connection->prepare($sql);
             $resultado->bindValue(':rut', $rut);
             $resultado->bindValue(':passwd', $passwd);
             $resultado->execute();
-            $connection->commit();
-            //Lo del beginTransaction y el comit nunca los he usado, y no se si enrealidad estan haciendo los suyo, 
-            //pero es buena idea usarlos en caso de que si esten funcionando :)
             if ($resultado->rowCount()>0){
-				$datos = $resultado->fetchAll();
+				$datos = $resultado->fetchAll(PDO::FETCH_ASSOC);
 				$id_usuario = $datos[0][0];
 				$session_id = self::set_session_id($id_usuario, $connection);
                 return json_encode(array('estado' => '1', 'datos' => $datos, 'session_id' => $session_id));
             }else{
                 return json_encode(array('estado' => '2', 'msj'=>'No se pudo obtener el registro del rut: '.$rut));
             }
+		} catch (Exception $e) {
+			return json_encode(array('estado' => '4', 'error'=> $e->getMessage()));
+		}
+	}
 
+	public static function loginWeb($rut, $pass){
+		try {
+			$connection = Conexion::getConnect();
+			$passwd = self::codificado($pass);
+			$sql= 'SELECT id_usuario, id_tipo, id_area, rut, nombre, ap_paterno, ap_materno, estado FROM usuario WHERE rut =:rut AND pass =:passwd';
+			$resultado = $connection->prepare($sql);
+            $resultado->bindValue(':rut', $rut);
+            $resultado->bindValue(':passwd', $passwd);
+            $resultado->execute();
+            if ($resultado->rowCount()>0){
+				$datos = $resultado->fetchAll(PDO::FETCH_ASSOC);
+				$id_usuario = $datos[0];
+				session_start();
+				$_SESSION['id_usuario'] = $datos[0];
+				$_SESSION['id_tipo'] = $datos[1];
+				$_SESSION['id_area'] = $datos[2];
+				$_SESSION['rut'] = $datos[3];
+				$_SESSION['nombre'] = $datos[4];
+				$_SESSION['ap_paterno'] = $datos[5];
+				$_SESSION['ap_materno'] = $datos[6];
+				$_SESSION['session_id'] = session_create_id();
+                return json_encode(array('estado' => '1', 'datos' => $datos));
+            }else{
+                return json_encode(array('estado' => '2', 'msj'=>'No se pudo obtener el registro del rut: '.$rut));
+            }
 		} catch (Exception $e) {
 			return json_encode(array('estado' => '4', 'error'=> $e->getMessage()));
 		}
@@ -136,6 +160,29 @@ Class Usuario{
     	}
 	}
 
+	public static function listaUsuarios(){
+		try {
+			$connection = Conexion::getConnect();
+			$sql= 'SELECT rut,ap_paterno,ap_materno,nombre,id_usuario FROM usuario';
+			$resultado = $connection->prepare($sql);
+            $resultado->execute();
+			if ($resultado->rowCount()>0){
+               $datos = $resultado->fetchAll(PDO::FETCH_ASSOC);
+			   //print_r($datos);
+			   foreach($datos as $fila){
+					$fila['id_usuario'] = '<button type="button" id="'.$fila['id_usuario'].'">Editar</button>';
+					//echo $fila['id_usuario'];
+			   }
+			   //print_r($datos);
+			   return json_encode($datos);
+            }else{
+                return false;
+            }
+		} catch (Exception $e) {
+    		return json_encode(array('estado' => '4', 'error'=> $e->getMessage()));
+    	}
+	}
+
 
 }
 if(isset($_GET['func'])){
@@ -143,6 +190,11 @@ if(isset($_GET['func'])){
 		case 'login':
 			if(isset($_GET['user']) && isset($_GET['pass'])){
 				echo Usuario::login(htmlspecialchars($_GET['user']),htmlspecialchars($_GET['pass']));
+			}
+			break;
+		case 'loginWeb':
+			if(isset($_GET['user']) && isset($_GET['pass'])){
+				echo Usuario::loginWeb(htmlspecialchars($_GET['user']),htmlspecialchars($_GET['pass']));
 			}
 			break;
 		case 'logout':
@@ -154,8 +206,9 @@ if(isset($_GET['func'])){
 			if(isset($_GET['id_usuario']) && isset($_GET['user']) && isset($_GET['pass'])){
 				echo Usuario::updateUser(htmlspecialchars($_GET['id_usuario']),htmlspecialchars($_GET['user']),htmlspecialchars($_GET['pass']));
 			}
+		case 'listUser':
+			echo Usuario::listaUsuarios();
 		default:
-			# code...
 			break;
 	}
 }
