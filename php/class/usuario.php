@@ -182,7 +182,91 @@ Class Usuario{
     		return json_encode(array('estado' => '4', 'error'=> $e->getMessage()));
     	}
 	}
+	public static function existeUsuario($rut){
+		try {
+			$connection = Conexion::getConnect();
+			$sql= 'SELECT * FROM usuario WHERE rut = :rut';
+			$resultado = $connection->prepare($sql);
+			$resultado->bindValue(':rut', $rut);
+            $resultado->execute();
+			if ($resultado->rowCount()>0){
+			   return true;
+            }else{
+                return false;
+            }
+		} catch (Exception $e) {
+    		return json_encode(array('estado' => '4', 'error'=> $e->getMessage()));
+    	}
+	}
+	public static function agregarUser($rut,$nombre,$ap_paterno,$ap_materno,$password,$id_tipo,$id_area,$estado){
+		if(!Usuario::existeUsuario($rut)){
+			try {
+				$connection = Conexion::getConnect();
+				$sql='INSERT INTO usuario (rut,nombre,ap_paterno,ap_materno,pass,id_tipo,id_area,estado) 
+				VALUES (:rut,:nombre,:ap_paterno,:ap_materno,:pass,:id_tipo,:id_area,:estado);';
 
+				$resultado = $connection->prepare($sql);
+				$resultado->bindValue(':rut', $rut);
+				$resultado->bindValue(':nombre', $nombre);
+				$resultado->bindValue(':ap_paterno', $ap_paterno);
+				$resultado->bindValue(':ap_materno', $ap_materno);
+				$resultado->bindValue(':pass', $password);
+				$resultado->bindValue(':id_tipo', $id_tipo);
+				$resultado->bindValue(':id_area', $id_area);
+				$resultado->bindValue(':estado', $estado);
+
+				$connection->beginTransaction();
+
+				$ejecucion = $resultado->execute();
+
+				$connection->commit();
+				if ($ejecucion){
+					return json_encode(array('estado' => '1', 'msj'=> 'Agregado correctamente'));
+				}else{
+					return json_encode(array('estado' => '2', 'msj'=>'Datos invalidos'));
+				}
+			} catch (Exception $e) {
+				return json_encode(array('estado' => '4', 'error'=> $e->getMessage()));
+			}
+		}else{
+			return json_encode(array('estado' => '3', 'msj'=> "El usuario ya existe"));
+		}
+		
+	}
+
+	public static function areasUsuarios(){
+		try {
+			$connection = Conexion::getConnect();
+			$sql= 'SELECT id_area,nombre FROM area';
+			$resultado = $connection->prepare($sql);
+            $resultado->execute();
+			if ($resultado->rowCount()>0){
+               $datos = $resultado->fetchAll(PDO::FETCH_ASSOC);
+			   return json_encode($datos);
+            }else{
+                return false;
+            }
+		} catch (Exception $e) {
+    		return json_encode(array('estado' => '4', 'error'=> $e->getMessage()));
+    	}
+	}
+
+	public static function tiposUsuarios(){
+		try {
+			$connection = Conexion::getConnect();
+			$sql= 'SELECT id_tipo,nombre FROM tipo_usuario';
+			$resultado = $connection->prepare($sql);
+            $resultado->execute();
+			if ($resultado->rowCount()>0){
+               $datos = $resultado->fetchAll(PDO::FETCH_ASSOC);
+			   return json_encode($datos);
+            }else{
+                return false;
+            }
+		} catch (Exception $e) {
+    		return json_encode(array('estado' => '4', 'error'=> $e->getMessage()));
+    	}
+	}
 
 }
 if(isset($_GET['func'])){
@@ -206,8 +290,29 @@ if(isset($_GET['func'])){
 			if(isset($_GET['id_usuario']) && isset($_GET['user']) && isset($_GET['pass'])){
 				echo Usuario::updateUser(htmlspecialchars($_GET['id_usuario']),htmlspecialchars($_GET['user']),htmlspecialchars($_GET['pass']));
 			}
+			break;
+		case 'agregar':
+			if(isset($_GET['rut']) && isset($_GET['nombres']) && isset($_GET['ap_paterno']) 
+			&& isset($_GET['ap_materno']) && isset($_GET['pass']) && isset($_GET['id_tipo']) 
+			&& isset($_GET['id_area']) && isset($_GET['estado'])){
+
+				echo Usuario::agregarUser(htmlspecialchars($_GET['rut']),htmlspecialchars($_GET['nombres']),htmlspecialchars($_GET['ap_paterno']),
+				htmlspecialchars($_GET['ap_materno']),htmlspecialchars($_GET['pass']),htmlspecialchars($_GET['id_tipo']),
+				htmlspecialchars($_GET['id_area']),htmlspecialchars($_GET['estado']));
+
+			}else{
+				echo "ERRORRRRR";
+			}
+			break;
 		case 'listUser':
 			echo Usuario::listaUsuarios();
+			break;
+		case 'tipoUser':
+			echo Usuario::TiposUsuarios();
+			break;
+		case 'areaUser':
+			echo Usuario::areasUsuarios();
+			break;
 		default:
 			break;
 	}
