@@ -13,8 +13,9 @@ Class Usuario{
             $resultado->execute();
             if ($resultado->rowCount()>0){
 				$datos = $resultado->fetchAll(PDO::FETCH_ASSOC);
-				$id_usuario = $datos[0][0];
+				$id_usuario = $datos[0]['id_usuario'];
 				$session_id = self::set_session_id($id_usuario, $connection);
+				//echo $session_id;
                 return json_encode(array('estado' => '1', 'datos' => $datos, 'session_id' => $session_id));
             }else{
                 return json_encode(array('estado' => '2', 'msj'=>'No se pudo obtener el registro del rut: '.$rut));
@@ -35,22 +36,39 @@ Class Usuario{
             $resultado->execute();
             if ($resultado->rowCount()>0){
 				$datos = $resultado->fetchAll(PDO::FETCH_ASSOC);
-				$id_usuario = $datos[0];
+				$id_usuario = $datos[0]['id_usuario'];
 				session_start();
-				$_SESSION['id_usuario'] = $datos[0];
-				$_SESSION['id_tipo'] = $datos[1];
-				$_SESSION['id_area'] = $datos[2];
-				$_SESSION['rut'] = $datos[3];
-				$_SESSION['nombre'] = $datos[4];
-				$_SESSION['ap_paterno'] = $datos[5];
-				$_SESSION['ap_materno'] = $datos[6];
-				$_SESSION['session_id'] = session_create_id();
+				$_SESSION['id_usuario'] = $datos[0]['id_usuario'];
+				$_SESSION['id_tipo'] = $datos[0]['id_tipo'];
+				$_SESSION['id_area'] = $datos[0]['id_area'];
+				$_SESSION['rut'] = $datos[0]['rut'];
+				$_SESSION['nombre'] = $datos[0]['nombre'];
+				$_SESSION['ap_paterno'] = $datos[0]['ap_paterno'];
+				$_SESSION['ap_materno'] = $datos[0]['ap_materno'];
+				$_SESSION['session_id'] = session_id();
                 return json_encode(array('estado' => '1', 'datos' => $datos));
             }else{
                 return json_encode(array('estado' => '2', 'msj'=>'No se pudo obtener el registro del rut: '.$rut));
             }
 		} catch (Exception $e) {
 			return json_encode(array('estado' => '4', 'error'=> $e->getMessage()));
+		}
+	}
+	public static function logoutWeb(){
+		session_start();
+		if(session_destroy()){
+			return json_encode(array('estado' => '1'));
+		}else{
+			return json_encode(array('estado' => '2'));
+		}
+	}
+	public static function verificarSessionWeb(){
+		session_start();
+		if(isset($_SESSION['session_id'])){
+			$nombre = $_SESSION['nombre'].' '.$_SESSION['ap_paterno'];
+			return json_encode(array('estado' => '1', 'nombre' => $nombre));
+		}else{
+			return json_encode(array('estado' => '2'));
 		}
 	}
 
@@ -60,7 +78,8 @@ Class Usuario{
 			$session_id = session_id();
 			// UPDATE SESSION ID
 			$datos = Array('session_id' => $session_id, 'id_usuario' => $id_usuario);
-			$query = $connection->prepare('UPDATE usuario SET session_id = :session_id WHERE id_usuario = :id_usuario;');
+			$sql = 'UPDATE usuario SET session_id = :session_id WHERE id_usuario = :id_usuario;';
+			$query = $connection->prepare($sql);
 			$connection->beginTransaction();
 			$resultado = $query->execute($datos);
 			$connection->commit();
@@ -159,21 +178,14 @@ Class Usuario{
     		return json_encode(array('estado' => '4', 'error'=> $e->getMessage()));
     	}
 	}
-
 	public static function listaUsuarios(){
 		try {
 			$connection = Conexion::getConnect();
-			$sql= 'SELECT rut,ap_paterno,ap_materno,nombre,id_usuario FROM usuario';
+			$sql= 'SELECT rut,ap_paterno,ap_materno,nombre,id_usuario,estado FROM usuario';
 			$resultado = $connection->prepare($sql);
             $resultado->execute();
 			if ($resultado->rowCount()>0){
                $datos = $resultado->fetchAll(PDO::FETCH_ASSOC);
-			   //print_r($datos);
-			   foreach($datos as $fila){
-					$fila['id_usuario'] = '<button type="button" id="'.$fila['id_usuario'].'">Editar</button>';
-					//echo $fila['id_usuario'];
-			   }
-			   //print_r($datos);
 			   return json_encode($datos);
             }else{
                 return false;
@@ -210,7 +222,7 @@ Class Usuario{
 				$resultado->bindValue(':nombre', $nombre);
 				$resultado->bindValue(':ap_paterno', $ap_paterno);
 				$resultado->bindValue(':ap_materno', $ap_materno);
-				$resultado->bindValue(':pass', $password);
+				$resultado->bindValue(':pass', codificado($password));
 				$resultado->bindValue(':id_tipo', $id_tipo);
 				$resultado->bindValue(':id_area', $id_area);
 				$resultado->bindValue(':estado', $estado);
@@ -267,8 +279,68 @@ Class Usuario{
     		return json_encode(array('estado' => '4', 'error'=> $e->getMessage()));
     	}
 	}
+	public static function cargarUsuario($id_usuario){
+		try {
+			$connection = Conexion::getConnect();
+			$sql= 'SELECT * FROM usuario WHERE id_usuario = :id_usuario';
+			$resultado = $connection->prepare($sql);
+			$resultado->bindValue(':id_usuario', $id_usuario);
+            $resultado->execute();
+			if ($resultado->rowCount()>0){
+               $datos = $resultado->fetchAll(PDO::FETCH_ASSOC);
+			   return json_encode($datos);
+            }else{
+                return json_encode();
+            }
+		} catch (Exception $e) {
+    		return json_encode(array('estado' => '4', 'error'=> $e->getMessage()));
+    	}
+	}
+	public static function actualizarUsuario($id_usuario,$rut,$nombre,$ap_paterno,$ap_materno,$password,$id_tipo,$id_area,$estado){
+		if($password!="666UCN66"){
+			$actualizar_pass = true;
+		}else{
+			$actualizar_pass = false;
+		}
+		try {
+    		$connection = Conexion::getConnect();
+    		$password = self::codificado($password);  //Codificación de la passwd
+			if($actualizar_pass){
+				$sql= 'UPDATE usuario SET rut = :rut, nombre = :nombre, ap_paterno = :ap_paterno, ap_materno = :ap_materno ,
+				pass = :pass, id_tipo = :id_tipo, id_area = :id_area, estado = :estado WHERE id_usuario = :id_usuario';
+			}else{
+				$sql= 'UPDATE usuario SET rut = :rut, nombre = :nombre, ap_paterno = :ap_paterno, ap_materno = :ap_materno ,
+				 id_tipo = :id_tipo, id_area = :id_area, estado = :estado WHERE id_usuario = :id_usuario';
+			}
+    		$connection->beginTransaction();
+    		$resultado = $connection->prepare($sql);
+			$resultado->bindValue(':rut', $rut);
+			$resultado->bindValue(':nombre', $nombre);
+			$resultado->bindValue(':ap_paterno', $ap_paterno);
+			$resultado->bindValue(':ap_materno', $ap_materno);
+			if($actualizar_pass){
+				$resultado->bindValue(':pass', $password);
+			}
+			$resultado->bindValue(':id_tipo', $id_tipo);
+			$resultado->bindValue(':id_area', $id_area);
+			$resultado->bindValue(':estado', $estado);
+			$resultado->bindValue(':id_usuario', $id_usuario);
+            $resultado->execute();
+            $connection->commit();
+
+            if ($resultado->rowCount()>0){
+                return json_encode(array('estado' => '1', 'msj' => 'Datos actualizados correctamente' ));
+            }else{
+                return json_encode(array('estado' => '2', 'msj'=>'Datos invalidos'));
+            }
+    		
+    	} catch (Exception $e) {
+    		return json_encode(array('estado' => '4', 'error'=> $e->getMessage()));
+    	}
+	}
 
 }
+
 if(isset($_GET['func'])){
 	switch ($_GET['func']) {
 		case 'login':
@@ -277,8 +349,8 @@ if(isset($_GET['func'])){
 			}
 			break;
 		case 'loginWeb':
-			if(isset($_GET['user']) && isset($_GET['pass'])){
-				echo Usuario::loginWeb(htmlspecialchars($_GET['user']),htmlspecialchars($_GET['pass']));
+			if(isset($_GET['rut']) && isset($_GET['pass'])){
+				echo Usuario::loginWeb(htmlspecialchars($_GET['rut']),htmlspecialchars($_GET['pass']));
 			}
 			break;
 		case 'logout':
@@ -286,11 +358,16 @@ if(isset($_GET['func'])){
 				echo Usuario::logout(htmlspecialchars($_GET['id_usuario']));
 			}
 			break;
+		case 'logoutWeb':
+			echo Usuario::logoutWeb();
+			break;
+		case 'sessionWeb':
+			echo Usuario::verificarSessionWeb();
+			break;
 		case 'update':
 			if(isset($_GET['id_usuario']) && isset($_GET['user']) && isset($_GET['pass'])){
 				echo Usuario::updateUser(htmlspecialchars($_GET['id_usuario']),htmlspecialchars($_GET['user']),htmlspecialchars($_GET['pass']));
 			}
-			break;
 		case 'agregar':
 			if(isset($_GET['rut']) && isset($_GET['nombres']) && isset($_GET['ap_paterno']) 
 			&& isset($_GET['ap_materno']) && isset($_GET['pass']) && isset($_GET['id_tipo']) 
@@ -300,8 +377,22 @@ if(isset($_GET['func'])){
 				htmlspecialchars($_GET['ap_materno']),htmlspecialchars($_GET['pass']),htmlspecialchars($_GET['id_tipo']),
 				htmlspecialchars($_GET['id_area']),htmlspecialchars($_GET['estado']));
 
-			}else{
-				echo "ERRORRRRR";
+			}
+			break;
+		case 'actUser':
+			if(isset($_GET['id_usuario']) && isset($_GET['rut']) && isset($_GET['nombres']) && isset($_GET['ap_paterno']) 
+			&& isset($_GET['ap_materno']) && isset($_GET['pass']) && isset($_GET['id_tipo']) 
+			&& isset($_GET['id_area']) && isset($_GET['estado'])){
+
+				echo Usuario::actualizarUsuario(htmlspecialchars($_GET['id_usuario']),htmlspecialchars($_GET['rut']),htmlspecialchars($_GET['nombres']),
+				htmlspecialchars($_GET['ap_paterno']),htmlspecialchars($_GET['ap_materno']),htmlspecialchars($_GET['pass']),htmlspecialchars($_GET['id_tipo']),
+				htmlspecialchars($_GET['id_area']),htmlspecialchars($_GET['estado']));
+
+			}
+			break;
+		case 'cargarUser':
+			if(isset($_GET['id_usuario'])){
+				echo Usuario::cargarUsuario(htmlspecialchars($_GET['id_usuario']));
 			}
 			break;
 		case 'listUser':

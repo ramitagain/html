@@ -57,6 +57,41 @@ Class Cuestionario{
         // SE ENVIA EL RESULTADO
     return json_encode($respuesta);
     }
+    public static function listPreguntas(){
+        try {
+			$connection = Conexion::getConnect();
+			$sql= 'SELECT * FROM seccion';
+			$resultado = $connection->prepare($sql);
+            $resultado->execute();
+			if ($resultado->rowCount()>0){
+               $datos = $resultado->fetchAll(PDO::FETCH_ASSOC);
+			   return json_encode($datos);
+            }else{
+                return false;
+            }
+		} catch (Exception $e) {
+    		return json_encode(array('estado' => '4', 'error'=> $e->getMessage()));
+    	}
+    }
+    public static function listAlternativas($id_opcion){
+        try {
+			$connection = Conexion::getConnect();
+			$sql= 'SELECT opcion_seccion.id_opcion, opcion.valor_opcion, opcion.puntaje, opcion.estado_opcion 
+            FROM opcion_seccion INNER JOIN opcion ON opcion_seccion.id_opcion = opcion.id_opcion 
+            WHERE  opcion_seccion.id_seccion = :id_opcion;';
+			$resultado = $connection->prepare($sql);
+            $resultado->bindValue(":id_opcion",$id_opcion);
+            $resultado->execute();
+			if ($resultado->rowCount()>0){
+               $datos = $resultado->fetchAll(PDO::FETCH_ASSOC);
+			   return json_encode($datos);
+            }else{
+                return json_encode();
+            }
+		} catch (Exception $e) {
+    		return json_encode(array('estado' => '4', 'error'=> $e->getMessage()));
+    	}
+    }
     
 }
 if(isset($_GET['func'])){
@@ -70,6 +105,14 @@ if(isset($_GET['func'])){
                 }
 				//echo Usuario::login(htmlspecialchars($_GET['user']),htmlspecialchars($_GET['pass']));
 			}
+			break;
+        case 'listQ':
+            echo Cuestionario::listPreguntas();
+			break;
+        case 'listAlt':
+            if(isset($_GET['id_seccion'])){
+                echo Cuestionario::listAlternativas(htmlspecialchars($_GET['id_seccion']));
+            }
 			break;
 		default:
 			# code...
